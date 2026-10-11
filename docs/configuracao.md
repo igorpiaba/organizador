@@ -29,6 +29,14 @@
      - `https://igorpiaba.github.io/organizador/`
      - `http://localhost:8000/`
 
+5b. **Código de login no e-mail (para o app do iPhone)**
+   - No iPhone, o app instalado na tela inicial não aproveita o login feito no Safari. Por isso o e-mail precisa trazer um código para digitar no app.
+   - Abra **Authentication**, depois **Emails** (ou **Email Templates**), depois **Magic Link**.
+   - No fim do texto, acrescente esta linha e clique em **Save**:
+     ```
+     <p>Ou digite este código no app: <strong>{{ .Token }}</strong></p>
+     ```
+
 6. **Carregar as tarefas iniciais**
    - Volte em **SQL Editor** e abra uma **New query**.
    - Cole o conteúdo de `supabase/seed.sql` e clique em **Run**.
