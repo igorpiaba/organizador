@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 
-from tarefas import interpretar_data, decidir_cobertura
+from tarefas import interpretar_data, decidir_cobertura, contexto_ssl
 
 
 class InterpretarData(unittest.TestCase):
@@ -31,6 +31,11 @@ class DecidirCobertura(unittest.TestCase):
         self.assertTrue(decidir_cobertura(d22, d19, True))
         self.assertTrue(decidir_cobertura(d19, d22, False))
         self.assertTrue(decidir_cobertura(d22, d22, False))
+
+
+class ContextoSSL(unittest.TestCase):
+    def test_tem_certificados_de_autoridade(self):
+        self.assertGreater(contexto_ssl().cert_store_stats()['x509_ca'], 0)
 
 
 if __name__ == '__main__':

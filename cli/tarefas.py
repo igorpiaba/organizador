@@ -9,7 +9,9 @@ Endereço e chave de serviço vêm do Keychain (serviço organizador-supabase).
 """
 import argparse
 import json
+import os
 import re
+import ssl
 import subprocess
 import sys
 import urllib.error
@@ -53,6 +55,14 @@ def ddmm(d) -> str:
     return d.strftime('%d/%m')
 
 
+def contexto_ssl() -> ssl.SSLContext:
+    # O Python do python.org não usa os certificados do macOS; /etc/ssl/cert.pem é a lista do sistema.
+    ctx = ssl.create_default_context()
+    if ctx.cert_store_stats()['x509_ca'] == 0 and os.path.exists('/etc/ssl/cert.pem'):
+        ctx.load_verify_locations('/etc/ssl/cert.pem')
+    return ctx
+
+
 def keychain(conta: str) -> str:
     r = subprocess.run(['security', 'find-generic-password', '-s', 'organizador-supabase', '-a', conta, '-w'],
                        capture_output=True, text=True)
@@ -74,7 +84,7 @@ class Supabase:
         dados = json.dumps(corpo).encode() if corpo is not None else None
         req = urllib.request.Request(f'{self.url}/rest/v1/{caminho}', data=dados, method=metodo, headers=cabecalhos)
         try:
-            with urllib.request.urlopen(req, timeout=20) as r:
+            with urllib.request.urlopen(req, timeout=20, context=contexto_ssl()) as r:
                 texto = r.read().decode()
                 return json.loads(texto) if texto else None
         except urllib.error.HTTPError as e:
