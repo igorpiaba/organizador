@@ -78,18 +78,18 @@ export async function renderizar() {
 function telaLogin() {
   let email = '';
   const status = el('p', { class: 'login-status' });
-  const campoCodigo = el('input', { type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 10, placeholder: '123456' });
+  const campoCodigo = el('input', { type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 20, placeholder: '12345678', autocapitalize: 'off' });
   const passoCodigo = el('form', { class: 'login-codigo', hidden: true, onsubmit: async (e) => {
     e.preventDefault();
-    const { error } = await dados.supabase.auth.verifyOtp({ email, token: campoCodigo.value.trim(), type: 'email' });
+    const { error } = await dados.supabase.auth.verifyOtp({ email, token: campoCodigo.value.replace(/\D/g, ''), type: 'email' });
     if (error) status.textContent = 'Código inválido ou vencido. Peça outro.';
     else iniciar();
   } }, el('label', {}, 'Código do e-mail', campoCodigo), el('button', { type: 'submit' }, 'Entrar'));
 
-  const campoEmail = el('input', { type: 'email', required: true, autocomplete: 'email', placeholder: 'seu@email.com' });
+  const campoEmail = el('input', { type: 'email', required: true, autocomplete: 'email', autocapitalize: 'off', placeholder: 'seu@email.com' });
   const passoEmail = el('form', { onsubmit: async (e) => {
     e.preventDefault();
-    email = campoEmail.value.trim();
+    email = campoEmail.value.trim().toLowerCase();
     const { error } = await dados.supabase.auth.signInWithOtp({
       email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: false },
     });
@@ -105,7 +105,7 @@ function telaLogin() {
   } }, el('label', {}, 'E-mail', campoEmail), el('button', { type: 'submit' }, 'Entrar com link'));
 
   const jaTenho = el('button', { type: 'button', class: 'secundario', onclick: () => {
-    email = campoEmail.value.trim();
+    email = campoEmail.value.trim().toLowerCase();
     if (!email) { status.textContent = 'Digite o e-mail primeiro.'; campoEmail.focus(); return; }
     status.textContent = '';
     passoCodigo.hidden = false;
