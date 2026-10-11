@@ -93,13 +93,26 @@ function telaLogin() {
     const { error } = await dados.supabase.auth.signInWithOtp({
       email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: false },
     });
-    if (error) { status.textContent = `Não deu certo: ${error.message}`; return; }
+    if (error) {
+      status.textContent = /rate limit/i.test(error.message)
+        ? 'Limite de e-mails por hora atingido. Se já tem um código, use "Já tenho um código".'
+        : `Não deu certo: ${error.message}`;
+      return;
+    }
     status.textContent = `Enviado para ${email}. Digite o código do e-mail aqui, ou abra o link no mesmo aparelho.`;
     passoCodigo.hidden = false;
     campoCodigo.focus();
   } }, el('label', {}, 'E-mail', campoEmail), el('button', { type: 'submit' }, 'Entrar com link'));
 
-  app.replaceChildren(el('main', { class: 'login' }, el('h1', {}, 'Organizador'), passoEmail, passoCodigo, status));
+  const jaTenho = el('button', { type: 'button', class: 'secundario', onclick: () => {
+    email = campoEmail.value.trim();
+    if (!email) { status.textContent = 'Digite o e-mail primeiro.'; campoEmail.focus(); return; }
+    status.textContent = '';
+    passoCodigo.hidden = false;
+    campoCodigo.focus();
+  } }, 'Já tenho um código');
+
+  app.replaceChildren(el('main', { class: 'login' }, el('h1', {}, 'Organizador'), passoEmail, jaTenho, passoCodigo, status));
 }
 
 async function iniciar() {
