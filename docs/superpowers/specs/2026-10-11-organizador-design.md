@@ -33,7 +33,7 @@ Campos comuns a toda tarefa: nome, categoria (com cor), prioridade (alta, média
 - Concluída uma vez, sai da lista. Com o prazo vencido, aparece como atrasada até ser concluída ou apagada.
 
 ### Categorias
-Lista editável no app, com nome e cor. Categorias iniciais: Palpite, PIXGOL, Pessoal. Outras podem ser criadas depois pelo app.
+Lista editável no app, com nome e cor. Categorias iniciais: Palpite, PIXGOL, Pessoal, BPX. Outras podem ser criadas depois pelo app.
 
 ## Telas (GitHub Pages)
 
