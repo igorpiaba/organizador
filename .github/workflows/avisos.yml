@@ -1,0 +1,51 @@
+name: avisos
+
+on:
+  schedule:
+    - cron: '0 11 * * *'   # 8h em Brasília
+    - cron: '0 20 * * *'   # 17h em Brasília
+    - cron: '0 12 1 * *'   # batimento mensal
+  workflow_dispatch:
+    inputs:
+      rodada:
+        description: Rodada
+        type: choice
+        options: [teste, manha, tarde]
+        default: teste
+
+jobs:
+  avisos:
+    if: github.event.schedule != '0 12 1 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Enviar aviso
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RODADA_MANUAL: ${{ github.event.inputs.rodada }}
+          CRON: ${{ github.event.schedule }}
+        run: |
+          if [ -n "$RODADA_MANUAL" ]; then RODADA="$RODADA_MANUAL"
+          elif [ "$CRON" = "0 11 * * *" ]; then RODADA=manha
+          else RODADA=tarde; fi
+          node avisos/enviar.js --rodada "$RODADA"
+
+  batimento:
+    if: github.event.schedule == '0 12 1 * *'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Commit de batimento
+        run: |
+          date -u +%F > .github/batimento.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "batimento mensal" && git push
