@@ -54,3 +54,16 @@ export function rotinaVenceEm(repeticao, iso) {
     default: return false;
   }
 }
+
+export function statusCobertura(tarefa, porId, hoje) {
+  if (!tarefa.coberto_ate) {
+    return { estado: 'atrasada', diasRestantes: null, alcancouLimite: false, limitante: null };
+  }
+  const diasRestantes = diasEntre(hoje, tarefa.coberto_ate);
+  const antes = tarefa.avisar_dias_antes ?? 1;
+  const estado = diasRestantes < 0 ? 'atrasada' : diasRestantes <= antes ? 'acabando' : 'ok';
+
+  const lim = tarefa.limitada_por ? porId.get(tarefa.limitada_por) : null;
+  const alcancouLimite = Boolean(lim && lim.ativa && lim.coberto_ate && tarefa.coberto_ate >= lim.coberto_ate);
+  return { estado, diasRestantes, alcancouLimite, limitante: alcancouLimite ? lim : null };
+}
