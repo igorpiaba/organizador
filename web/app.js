@@ -5,11 +5,13 @@ import * as dados from './dados.js';
 import * as hoje from './telas/hoje.js';
 import * as coberturas from './telas/coberturas.js';
 import * as tarefas from './telas/tarefas.js';
+import * as feitas from './telas/feitas.js';
 
 const ABAS = [
   ['hoje', 'Hoje', hoje],
   ['coberturas', 'Coberturas', coberturas],
   ['tarefas', 'Tarefas', tarefas],
+  ['feitas', 'Feitas', feitas],
 ];
 const NOMES_DIA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 const app = document.getElementById('app');
@@ -92,6 +94,10 @@ export async function renderizar() {
     return;
   }
   estado.hoje = hojeSP();
+  estado.historico = [];
+  if (abaAtual()[0] === 'feitas' && online) {
+    try { estado.historico = await dados.carregarHistorico(); } catch { /* sem histórico de coberturas: mostra o resto */ }
+  }
   estado.dia = limitarDia(diaVisto || estado.hoje, estado.hoje);
 
   const [chaveAba, tituloAba, tela] = abaAtual();

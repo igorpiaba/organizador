@@ -156,3 +156,43 @@ export function limitarDia(dia, hoje) {
   const n = Math.max(-LIMITE_PASSADO, Math.min(LIMITE_FUTURO, diasEntre(hoje, dia)));
   return somarDias(hoje, n);
 }
+
+// Aba "Feitas": o que foi concluído nos últimos dias, agrupado por dia.
+export const DIAS_HISTORICO = 30;
+const ORDEM_TIPO = { cobertura: 0, rotina: 1, avulsa: 2 };
+
+export function montarFeitas(tarefas, conclusoes, historico, hoje) {
+  const porId = new Map(tarefas.map(t => [t.id, t]));
+  const inicio = somarDias(hoje, -(DIAS_HISTORICO - 1));
+  const itens = [];
+
+  for (const c of conclusoes) {
+    const tarefa = porId.get(c.tarefa_id);
+    if (tarefa) itens.push({ tipo: 'rotina', tarefa, dia: c.dia });
+  }
+  for (const tarefa of tarefas) {
+    if (tarefa.tipo === 'avulsa' && tarefa.concluida_em) {
+      itens.push({ tipo: 'avulsa', tarefa, dia: hojeSP(new Date(tarefa.concluida_em)) });
+    }
+  }
+  for (const h of historico) {
+    const tarefa = porId.get(h.tarefa_id);
+    if (tarefa) itens.push({ tipo: 'cobertura', tarefa, dia: hojeSP(new Date(h.em)), de: h.de, para: h.para, origem: h.origem });
+  }
+
+  const porDia = new Map();
+  for (const item of itens) {
+    if (item.dia < inicio) continue;
+    if (!porDia.has(item.dia)) porDia.set(item.dia, []);
+    porDia.get(item.dia).push(item);
+  }
+  const dias = [...porDia.entries()]
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([dia, lista]) => ({
+      dia,
+      itens: lista.sort((a, b) => ORDEM_TIPO[a.tipo] - ORDEM_TIPO[b.tipo] || a.tarefa.nome.localeCompare(b.tarefa.nome, 'pt-BR')),
+    }));
+  const desde7 = somarDias(hoje, -6);
+  const ultimos7 = itens.filter(i => i.dia >= desde7 && i.dia <= hoje).length;
+  return { dias, ultimos7 };
+}
