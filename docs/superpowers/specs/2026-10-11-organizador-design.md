@@ -5,7 +5,7 @@ Status: aguardando revisão do Igor
 
 ## Objetivo
 
-Um app pessoal de tarefas para o dia a dia do Igor (time de sportsbook), usado no iPhone e no Mac. Ao abrir o dia, ele vê o que precisa fazer sem ter que lembrar de nada, e é avisado no Telegram antes de uma cobertura acabar (ex.: nunca ficar sem banner).
+Um app pessoal de tarefas para o dia a dia do Igor (time de sportsbook; hoje trabalha nas casas Palpite e PIXGOL, a BPX está desligada), usado no iPhone e no Mac. Ao abrir o dia, ele vê o que precisa fazer sem ter que lembrar de nada, e é avisado no Telegram antes de uma cobertura acabar (ex.: nunca ficar sem banner).
 
 Critério de sucesso: nenhuma cobertura de banner acaba sem aviso prévio, e a lista "Hoje" mostra tudo o que pede ação naquele dia.
 
@@ -26,13 +26,14 @@ Campos comuns a toda tarefa: nome, categoria (com cor), prioridade (alta, média
 - Regra de repetição: todo dia, dias úteis (seg–sex), dias da semana escolhidos, ou dia X do mês. Se o mês não tiver o dia X, vale o último dia do mês.
 - Cada ocorrência é marcada como feita por dia (tabela de conclusões).
 - Rotina não feita **não acumula**: no dia seguinte aparece só a ocorrência nova. Ontem não vira atrasada.
+- Campo opcional `horario_sugerido` (ex.: 08:00). Define a ordem das rotinas em "Hoje" e no resumo das 8h; rotinas sem horário vêm depois.
 
 ### Avulsa
 - Campos: `prazo` (data) e `lembrete` (horário opcional, avisado na rodada de aviso seguinte a esse horário).
 - Concluída uma vez, sai da lista. Com o prazo vencido, aparece como atrasada até ser concluída ou apagada.
 
 ### Categorias
-Lista editável no app, com nome e cor. Categorias iniciais: Palpite, PIXGOL, Vaidebet, Betpix, BPX geral, Pessoal.
+Lista editável no app, com nome e cor. Categorias iniciais: Palpite, PIXGOL, Pessoal. Outras podem ser criadas depois pelo app.
 
 ## Telas (GitHub Pages)
 
@@ -44,7 +45,7 @@ App de página única e instalável (PWA), com ícone e tela cheia quando adicio
    3. Rotinas do dia.
    4. Avulsas que vencem hoje.
 
-   Dentro de cada grupo, ordena por prioridade. Cada item tem uma ação rápida: "feito" (rotina e avulsa) ou "coberto até…" (cobertura, abre um seletor de data).
+   Dentro de cada grupo, ordena por prioridade (nas rotinas, primeiro por `horario_sugerido`). Cada item tem uma ação rápida: "feito" (rotina e avulsa) ou "coberto até…" (cobertura, abre um seletor de data).
 2. **Coberturas:** uma linha por cobertura, com "coberto até", dias restantes e uma barra colorida (verde, amarelo ou vermelho). Mostra o vínculo "limitada por" quando existir.
 3. **Tarefas:** lista de todas, com filtro por categoria e tipo. Criar, editar, pausar e apagar.
 
@@ -88,16 +89,13 @@ Todas as datas são calculadas no fuso `America/Sao_Paulo`.
   - `tarefas.py feito <codigo> [--dia DD/MM]`
   - `tarefas.py ver <codigo>`
 - Fica em `~/projetos/organizador/cli/` e roda com Python, só com biblioteca padrão (chamada REST ao Supabase).
-- Skills que passam a chamar o comando no fim:
+- Skill que passa a chamar o comando no fim:
 
   | Skill | Ação no organizador |
   |---|---|
   | banners-home-sportsbook | `banners-imagens` ao gerar e conferir as fotos; `banners-palpite` / `banners-pixgol` ao agendar |
-  | fechar-dia-dashboard-bpx | `fechar-dia-bpx` |
-  | tagueamento-diario-bpx | `tagueamento-bpx` |
-  | acompanhamento-reativacao-bpx | `reativacao-bpx` |
-  | criar-multiplas-widget-bpx | `multiplas-widget` |
 
+  Os dashboards da Palpite e da PIXGOL ainda não têm skill; o Igor marca no app. Quando ganharem skill, ela chama `tarefas.py feito dashboard-palpite` / `dashboard-pixgol`.
 - Se o comando falhar, a skill não para: ela termina o trabalho e avisa "não consegui atualizar o organizador, marque manualmente".
 
 ## Tarefas iniciais (seed)
@@ -107,10 +105,8 @@ Todas as datas são calculadas no fuso `America/Sao_Paulo`.
 | Banners: imagens prontas | cobertura | `banners-imagens` | avisa 1 dia antes; coberto até 22/10/2026 |
 | Banners agendados: Palpite | cobertura | `banners-palpite` | avisa 1 dia antes; limitada por `banners-imagens`; coberto até 19/10/2026 |
 | Banners agendados: PIXGOL | cobertura | `banners-pixgol` | avisa 1 dia antes; limitada por `banners-imagens`; coberto até 19/10/2026 |
-| Tagueamento diário BPX | rotina | `tagueamento-bpx` | dias úteis |
-| Fechar dia dashboard BPX | rotina | `fechar-dia-bpx` | todo dia |
-| Acompanhamento reativação | rotina | `reativacao-bpx` | dias úteis |
-| Múltiplas do widget | rotina | `multiplas-widget` | todo dia |
+| Fechar dia dashboard: Palpite | rotina | `dashboard-palpite` | todo dia, horário sugerido 08:00, prioridade alta |
+| Fechar dia dashboard: PIXGOL | rotina | `dashboard-pixgol` | todo dia, horário sugerido 08:00, prioridade alta |
 
 As datas e regras das rotinas são um ponto de partida. O Igor ajusta pelo app.
 
