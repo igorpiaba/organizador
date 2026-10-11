@@ -50,14 +50,22 @@ function formulario(estado, acoes, redesenhar) {
   const radios = [['diario', 'Todo dia'], ['uteis', 'Dias úteis'], ['semana', 'Dias da semana'], ['mes', 'Dia do mês']]
     .map(([v, n]) => el('label', { class: 'opcao' }, el('input', { type: 'radio', name: 'repeticao', value: v, checked: rep.tipo === v }), n));
   const caixasDias = DIAS.map((n, i) => el('label', {}, el('input', { type: 'checkbox', value: i, checked: (rep.dias || []).includes(i) }), n));
+  const blocoDias = el('div', { class: 'dias-semana' }, caixasDias);
+  const blocoDiaMes = campo('Dia do mês', ent.diaMes);
+  const mostrarRepeticao = () => {
+    const r = radios.map(l => l.querySelector('input')).find(i => i.checked)?.value;
+    blocoDias.hidden = r !== 'semana';
+    blocoDiaMes.hidden = r !== 'mes';
+  };
+  radios.forEach(l => l.querySelector('input').addEventListener('change', mostrarRepeticao));
+  mostrarRepeticao();
 
   const blocos = {
     cobertura: el('div', { class: 'formulario-bloco' },
       campo('Coberto até', ent.coberto_ate), campo('Avisar quantos dias antes', ent.avisar_dias_antes),
       campo('Limitada por', ent.limitada_por)),
     rotina: el('div', { class: 'formulario-bloco' },
-      el('fieldset', {}, el('legend', {}, 'Repetição'), radios,
-        el('div', { class: 'dias-semana' }, caixasDias), campo('Dia do mês', ent.diaMes)),
+      el('fieldset', {}, el('legend', {}, 'Repetição'), radios, blocoDias, blocoDiaMes),
       campo('Horário sugerido', ent.horario_sugerido)),
     avulsa: el('div', { class: 'formulario-bloco' }, campo('Prazo', ent.prazo), campo('Lembrete', ent.lembrete)),
   };
