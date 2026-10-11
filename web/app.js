@@ -1,6 +1,6 @@
 // Casca do app: login, abas, carga dos dados e modo offline.
 import { el } from './dom.js';
-import { hojeSP, formatarDDMM, diaDaSemana } from './regras.js';
+import { hojeSP, formatarDDMM, diaDaSemana, somarDias, rotuloDia, limitarDia, diasEntre, LIMITE_PASSADO, LIMITE_FUTURO } from './regras.js';
 import * as dados from './dados.js';
 import * as hoje from './telas/hoje.js';
 import * as coberturas from './telas/coberturas.js';
@@ -14,6 +14,39 @@ const ABAS = [
 const NOMES_DIA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
 const app = document.getElementById('app');
 let logado = false;
+let diaVisto = null; // dia escolhido na aba Hoje (null = hoje)
+
+const TEMAS = [['auto', 'Automático', '◐'], ['claro', 'Claro', '☀︎'], ['escuro', 'Escuro', '☾']];
+
+function temaSalvo() {
+  try { return localStorage.getItem('organizador:tema') || 'auto'; } catch { return 'auto'; }
+}
+
+function aplicarTema(tema) {
+  const raiz = document.documentElement;
+  if (tema === 'claro') raiz.dataset.theme = 'light';
+  else if (tema === 'escuro') raiz.dataset.theme = 'dark';
+  else delete raiz.dataset.theme;
+  try { localStorage.setItem('organizador:tema', tema); } catch { /* sem armazenamento: vale só nesta sessão */ }
+}
+
+function botaoTema() {
+  const atual = TEMAS.find(([t]) => t === temaSalvo()) || TEMAS[0];
+  const proximo = TEMAS[(TEMAS.indexOf(atual) + 1) % TEMAS.length];
+  return el('button', { type: 'button', class: 'botao-icone', title: `Tema: ${atual[1]}`, 'aria-label': `Tema: ${atual[1]}. Trocar para ${proximo[1]}`,
+    onclick: () => { aplicarTema(proximo[0]); renderizar(); } }, atual[2]);
+}
+
+function navegacaoDia(estado) {
+  const n = diasEntre(estado.hoje, estado.dia);
+  const ir = (dia) => { diaVisto = dia === estado.hoje ? null : dia; renderizar(); };
+  return el('div', { class: 'nav-dia' },
+    el('button', { type: 'button', class: 'botao-icone', 'aria-label': 'Dia anterior', disabled: n <= -LIMITE_PASSADO,
+      onclick: () => ir(somarDias(estado.dia, -1)) }, '‹'),
+    el('button', { type: 'button', class: 'botao-icone', 'aria-label': 'Próximo dia', disabled: n >= LIMITE_FUTURO,
+      onclick: () => ir(somarDias(estado.dia, 1)) }, '›'),
+    n === 0 ? null : el('button', { type: 'button', class: 'secundario botao-hoje', onclick: () => ir(estado.hoje) }, 'Hoje'));
+}
 
 function abaAtual() {
   const nome = location.hash.slice(1);
@@ -59,16 +92,20 @@ export async function renderizar() {
     return;
   }
   estado.hoje = hojeSP();
+  estado.dia = limitarDia(diaVisto || estado.hoje, estado.hoje);
 
   const [chaveAba, tituloAba, tela] = abaAtual();
+  const naAbaHoje = chaveAba === 'hoje';
+  const diaTopo = naAbaHoje ? estado.dia : estado.hoje;
   const conteudo = el('main', { class: 'conteudo' });
   tela.desenhar(conteudo, estado, criarAcoes(online));
 
   app.replaceChildren(
     el('header', { class: 'topo' },
-      el('h1', {}, tituloAba),
-      el('span', { class: 'data' }, `${NOMES_DIA[diaDaSemana(estado.hoje)]}, ${formatarDDMM(estado.hoje)}`),
-      online ? null : el('span', { class: 'selo selo-offline' }, 'offline')),
+      el('h1', {}, naAbaHoje ? rotuloDia(estado.dia, estado.hoje) : tituloAba),
+      el('span', { class: 'data' }, `${NOMES_DIA[diaDaSemana(diaTopo)]}, ${formatarDDMM(diaTopo)}`),
+      online ? null : el('span', { class: 'selo selo-offline' }, 'offline'),
+      el('div', { class: 'topo-acoes' }, naAbaHoje ? navegacaoDia(estado) : null, botaoTema())),
     conteudo,
     el('nav', { class: 'abas' }, ABAS.map(([chave, titulo]) =>
       el('a', { href: `#${chave}`, class: chave === chaveAba ? 'ativa' : '', 'aria-current': chave === chaveAba ? 'page' : null }, titulo))),
@@ -127,6 +164,7 @@ async function iniciar() {
   renderizar();
 }
 
+aplicarTema(temaSalvo());
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 window.addEventListener('hashchange', () => renderizar());
 window.addEventListener('online', () => renderizar());

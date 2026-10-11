@@ -31,13 +31,15 @@ function item(it, dia, estado, acoes) {
 }
 
 export function desenhar(raiz, estado, acoes) {
-  const dia = montarDia(estado.tarefas, estado.conclusoes, estado.hoje);
+  const dia = montarDia(estado.tarefas, estado.conclusoes, estado.dia);
   const grupos = GRUPOS.filter(([chave]) => dia[chave].length > 0);
+  const ehHoje = estado.dia === estado.hoje;
   if (grupos.length === 0) {
-    raiz.append(el('p', { class: 'vazio' }, 'Nada pendente hoje. 🎉'));
+    raiz.append(el('p', { class: 'vazio' }, ehHoje ? 'Nada pendente hoje. 🎉' : 'Nada para este dia.'));
     return;
   }
-  for (const [chave, titulo] of grupos) {
+  for (const [chave, tituloBase] of grupos) {
+    const titulo = chave === 'rotinas' && !ehHoje ? 'Rotinas do dia' : tituloBase;
     raiz.append(el('section', { class: `grupo grupo-${chave}` },
       el('h2', {}, titulo, el('span', { class: 'contagem' }, String(dia[chave].length))),
       el('ul', { class: 'lista' }, dia[chave].map(it => item(it, dia, estado, acoes)))));

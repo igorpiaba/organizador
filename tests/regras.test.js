@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hojeSP, somarDias, diasEntre, formatarDDMM, diaDaSemana, rotinaVenceEm, statusCobertura, montarDia } from '../web/regras.js';
+import { hojeSP, somarDias, diasEntre, formatarDDMM, diaDaSemana, rotinaVenceEm, statusCobertura, montarDia, rotuloDia, limitarDia, LIMITE_PASSADO, LIMITE_FUTURO } from '../web/regras.js';
 import { HOJE, tarefasExemplo } from './exemplo.js';
 
 test('hojeSP usa o fuso de São Paulo', () => {
@@ -114,4 +114,24 @@ test('montarDia ordena por prioridade dentro do grupo', () => {
     { ...tarefasExemplo[6], id: 'b', nome: 'A alta', prioridade: 'alta' },
   ];
   assert.deepEqual(ids(montarDia(tarefas, [], HOJE).atrasadas), ['b', 'a']);
+});
+
+test('rotuloDia', () => {
+  assert.equal(rotuloDia('2026-10-11', '2026-10-11'), 'Hoje');
+  assert.equal(rotuloDia('2026-10-12', '2026-10-11'), 'Amanhã');
+  assert.equal(rotuloDia('2026-10-10', '2026-10-11'), 'Ontem');
+  assert.equal(rotuloDia('2026-10-13', '2026-10-11'), 'Terça');
+  assert.equal(rotuloDia('2026-10-25', '2026-10-11'), 'Domingo');
+});
+test('limitarDia segura entre 7 dias atrás e 30 à frente', () => {
+  assert.equal(LIMITE_PASSADO, 7);
+  assert.equal(LIMITE_FUTURO, 30);
+  assert.equal(limitarDia('2026-10-15', '2026-10-11'), '2026-10-15');
+  assert.equal(limitarDia('2026-11-30', '2026-10-11'), '2026-11-10');
+  assert.equal(limitarDia('2026-09-01', '2026-10-11'), '2026-10-04');
+});
+test('montarDia num dia futuro projeta as coberturas', () => {
+  const dia = montarDia(tarefasExemplo, [], '2026-10-29');
+  assert.ok(ids(dia.coberturas).includes('img'));            // imagens acabam 30/10
+  assert.ok(ids(dia.atrasadas).includes('pal'));             // agendado acabou 22/10
 });

@@ -138,3 +138,21 @@ export function textoLimite(status) {
   const lim = status.limitante;
   return `alcançou “${lim.nome}” (${formatarDDMM(lim.coberto_ate)}): hora de preparar as próximas`;
 }
+
+// Navegação entre dias na tela "Hoje".
+export const LIMITE_PASSADO = 7;
+export const LIMITE_FUTURO = 30;
+const NOMES_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+export function rotuloDia(dia, hoje) {
+  const n = diasEntre(hoje, dia);
+  if (n === 0) return 'Hoje';
+  if (n === 1) return 'Amanhã';
+  if (n === -1) return 'Ontem';
+  return NOMES_SEMANA[diaDaSemana(dia)];
+}
+
+export function limitarDia(dia, hoje) {
+  const n = Math.max(-LIMITE_PASSADO, Math.min(LIMITE_FUTURO, diasEntre(hoje, dia)));
+  return somarDias(hoje, n);
+}

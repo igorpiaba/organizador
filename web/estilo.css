@@ -14,7 +14,7 @@
   --fundo-amarelo: #fffbeb;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --fundo: #0b0f17;
     --cartao: #151b26;
     --texto: #f3f4f6;
@@ -29,6 +29,21 @@
     --fundo-vermelho: #2a1215;
     --fundo-amarelo: #2a2010;
   }
+}
+:root[data-theme="dark"] {
+  --fundo: #0b0f17;
+  --cartao: #151b26;
+  --texto: #f3f4f6;
+  --suave: #9ca3af;
+  --borda: #263042;
+  --destaque: #f3f4f6;
+  --sobre-destaque: #111827;
+  --neutro: #6b7280;
+  --vermelho: #f87171;
+  --amarelo: #fbbf24;
+  --verde: #4ade80;
+  --fundo-vermelho: #2a1215;
+  --fundo-amarelo: #2a2010;
 }
 
 * { box-sizing: border-box; }
@@ -144,3 +159,14 @@ button:disabled, input:disabled { opacity: .5; }
 .categoria { display: flex; gap: 8px; align-items: center; }
 .categoria input[type="text"] { flex: 1; min-width: 0; }
 .secao-titulo { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--suave); margin: 24px 0 8px; }
+
+/* Topo: navegação de dias e tema */
+.topo-acoes { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.nav-dia { display: flex; align-items: center; gap: 6px; }
+.botao-icone {
+  min-width: 44px; padding: 8px 10px; font-size: 20px; line-height: 1;
+  background: var(--cartao); color: var(--texto); border: 1px solid var(--borda);
+}
+.botao-hoje { padding: 8px 12px; }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
