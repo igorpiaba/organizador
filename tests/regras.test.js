@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hojeSP, somarDias, diasEntre, formatarDDMM, diaDaSemana, rotinaVenceEm, statusCobertura } from '../web/regras.js';
+import { hojeSP, somarDias, diasEntre, formatarDDMM, diaDaSemana, rotinaVenceEm, statusCobertura, montarDia } from '../web/regras.js';
+import { HOJE, tarefasExemplo } from './exemplo.js';
 
 test('hojeSP usa o fuso de São Paulo', () => {
   assert.equal(hojeSP(new Date('2026-10-12T02:30:00Z')), '2026-10-11'); // 23h30 em SP
@@ -67,4 +68,50 @@ test('limitante pausada não dispara limite', () => {
 test('cobertura sem data é atrasada', () => {
   assert.deepEqual(statusCobertura({...img, coberto_ate:null}, mapa(), '2026-10-11'),
     {estado:'atrasada', diasRestantes:null, alcancouLimite:false, limitante:null});
+});
+
+const ids = (itens) => itens.map(i => i.tarefa.id);
+
+test('montarDia separa coberturas por estado', () => {
+  const dia = montarDia(tarefasExemplo, [], HOJE);
+  assert.equal(dia.hoje, HOJE);
+  assert.ok(ids(dia.atrasadas).includes('pix'));
+  assert.deepEqual(ids(dia.coberturas), ['pal']);
+  assert.ok(!ids([...dia.atrasadas, ...dia.coberturas]).includes('img'));
+  assert.equal(dia.coberturas[0].status.estado, 'acabando');
+});
+test('montarDia ordena rotinas por horário, depois prioridade', () => {
+  const dia = montarDia(tarefasExemplo, [], HOJE);
+  assert.deepEqual(ids(dia.rotinas), ['dash', 'alta', 'util']);
+});
+test('montarDia marca rotina feita só no dia certo', () => {
+  assert.equal(montarDia(tarefasExemplo, [{ tarefa_id: 'dash', dia: HOJE }], HOJE).rotinas[0].feita, true);
+  assert.equal(montarDia(tarefasExemplo, [{ tarefa_id: 'dash', dia: '2026-10-20' }], HOJE).rotinas[0].feita, false);
+});
+test('montarDia: rotina de dia útil some no domingo', () => {
+  assert.ok(!ids(montarDia(tarefasExemplo, [], '2026-10-25').rotinas).includes('util'));
+});
+test('montarDia: avulsas vencidas, de hoje, sem prazo e concluídas', () => {
+  const dia = montarDia(tarefasExemplo, [], HOJE);
+  assert.ok(ids(dia.atrasadas).includes('venc'));
+  assert.deepEqual(ids(dia.avulsas), ['hoje', 'semp']);
+  assert.ok(!ids([...dia.atrasadas, ...dia.avulsas]).includes('feita'));
+});
+test('montarDia ignora tarefa pausada', () => {
+  const dia = montarDia(tarefasExemplo, [], HOJE);
+  const todos = [...dia.atrasadas, ...dia.coberturas, ...dia.rotinas, ...dia.avulsas];
+  assert.ok(!ids(todos).includes('paus'));
+});
+test('montarDia: cobertura folgada que alcançou o limite entra em coberturas', () => {
+  const tarefas = tarefasExemplo.map(x => x.id === 'pal' ? { ...x, coberto_ate: '2026-10-30' } : x);
+  const dia = montarDia(tarefas, [], HOJE);
+  assert.deepEqual(ids(dia.coberturas), ['pal']);
+  assert.equal(dia.coberturas[0].status.alcancouLimite, true);
+});
+test('montarDia ordena por prioridade dentro do grupo', () => {
+  const tarefas = [
+    { ...tarefasExemplo[6], id: 'a', nome: 'B baixa', prioridade: 'baixa' },
+    { ...tarefasExemplo[6], id: 'b', nome: 'A alta', prioridade: 'alta' },
+  ];
+  assert.deepEqual(ids(montarDia(tarefas, [], HOJE).atrasadas), ['b', 'a']);
 });

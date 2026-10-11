@@ -67,3 +67,45 @@ export function statusCobertura(tarefa, porId, hoje) {
   const alcancouLimite = Boolean(lim && lim.ativa && lim.coberto_ate && tarefa.coberto_ate >= lim.coberto_ate);
   return { estado, diasRestantes, alcancouLimite, limitante: alcancouLimite ? lim : null };
 }
+
+const PESO = { alta: 0, media: 1, baixa: 2 };
+
+function porPrioridade(a, b) {
+  return (PESO[a.tarefa.prioridade] ?? 1) - (PESO[b.tarefa.prioridade] ?? 1)
+    || a.tarefa.nome.localeCompare(b.tarefa.nome, 'pt-BR');
+}
+
+function porHorario(a, b) {
+  const ha = a.tarefa.horario_sugerido || '99:99';
+  const hb = b.tarefa.horario_sugerido || '99:99';
+  return ha.localeCompare(hb) || porPrioridade(a, b);
+}
+
+export function montarDia(tarefas, conclusoes, hoje) {
+  const porId = new Map(tarefas.map(t => [t.id, t]));
+  const feitasHoje = new Set(conclusoes.filter(c => c.dia === hoje).map(c => c.tarefa_id));
+  const dia = { hoje, atrasadas: [], coberturas: [], rotinas: [], avulsas: [] };
+  const avulsasSemPrazo = [];
+
+  for (const tarefa of tarefas) {
+    if (!tarefa.ativa) continue;
+    if (tarefa.tipo === 'cobertura') {
+      const status = statusCobertura(tarefa, porId, hoje);
+      if (status.estado === 'atrasada') dia.atrasadas.push({ tarefa, status });
+      else if (status.estado === 'acabando' || status.alcancouLimite) dia.coberturas.push({ tarefa, status });
+    } else if (tarefa.tipo === 'rotina') {
+      if (rotinaVenceEm(tarefa.repeticao, hoje)) dia.rotinas.push({ tarefa, feita: feitasHoje.has(tarefa.id) });
+    } else if (tarefa.tipo === 'avulsa' && !tarefa.concluida_em) {
+      if (!tarefa.prazo) avulsasSemPrazo.push({ tarefa });
+      else if (tarefa.prazo < hoje) dia.atrasadas.push({ tarefa });
+      else if (tarefa.prazo === hoje) dia.avulsas.push({ tarefa });
+    }
+  }
+
+  dia.atrasadas.sort(porPrioridade);
+  dia.coberturas.sort(porPrioridade);
+  dia.rotinas.sort(porHorario);
+  dia.avulsas.sort(porPrioridade);
+  dia.avulsas.push(...avulsasSemPrazo.sort(porPrioridade));
+  return dia;
+}
