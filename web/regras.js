@@ -109,3 +109,32 @@ export function montarDia(tarefas, conclusoes, hoje) {
   dia.avulsas.push(...avulsasSemPrazo.sort(porPrioridade));
   return dia;
 }
+
+// Textos de status, usados pela tela "Hoje" e pela mensagem do Telegram.
+export function textoItem(item) {
+  const { tarefa, status } = item;
+  if (tarefa.tipo === 'cobertura') {
+    if (!tarefa.coberto_ate) return `${tarefa.nome} — sem data de cobertura`;
+    const data = formatarDDMM(tarefa.coberto_ate);
+    if (status.estado === 'atrasada') return `${tarefa.nome} — acabou em ${data}`;
+    if (status.estado === 'acabando') {
+      const n = status.diasRestantes;
+      const quando = n === 0 ? 'acaba hoje' : n === 1 ? 'acaba amanhã' : `acaba em ${n} dias`;
+      return `${tarefa.nome} — ${quando} (${data})`;
+    }
+    return `${tarefa.nome} — coberto até ${data}`;
+  }
+  if (tarefa.tipo === 'rotina') {
+    return tarefa.horario_sugerido ? `${tarefa.horario_sugerido} ${tarefa.nome}` : tarefa.nome;
+  }
+  if (tarefa.prazo && tarefa.prazo < (item.hoje ?? tarefa.prazo)) {
+    return `${tarefa.nome} — prazo era ${formatarDDMM(tarefa.prazo)}`;
+  }
+  return tarefa.lembrete ? `${tarefa.nome} (lembrete ${tarefa.lembrete})` : tarefa.nome;
+}
+
+export function textoLimite(status) {
+  if (!status?.alcancouLimite) return null;
+  const lim = status.limitante;
+  return `alcançou “${lim.nome}” (${formatarDDMM(lim.coberto_ate)}): hora de preparar as próximas`;
+}
