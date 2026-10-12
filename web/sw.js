@@ -1,5 +1,5 @@
 // Guarda a casca do app para abrir sem internet. Os dados vêm do Supabase (nunca interceptado).
-const CACHE = 'organizador-v5';
+const CACHE = 'organizador-v6';
 const CASCA = ['./', 'index.html', 'estilo.css', 'app.js', 'config.js', 'dom.js', 'dados.js', 'regras.js',
   'telas/comum.js', 'telas/hoje.js', 'telas/coberturas.js', 'telas/tarefas.js', 'telas/feitas.js',
   'manifest.webmanifest', 'icone-192.png', 'icone-512.png'];
