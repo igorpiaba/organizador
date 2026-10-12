@@ -6,6 +6,7 @@ import * as hoje from './telas/hoje.js';
 import * as coberturas from './telas/coberturas.js';
 import * as tarefas from './telas/tarefas.js';
 import * as feitas from './telas/feitas.js';
+import { peixe } from './telas/comum.js';
 
 const ABAS = [
   ['hoje', 'Hoje', hoje],
@@ -13,7 +14,7 @@ const ABAS = [
   ['tarefas', 'Tarefas', tarefas],
   ['feitas', 'Feitas', feitas],
 ];
-const NOMES_DIA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+const DIAS_CURTOS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 const app = document.getElementById('app');
 let logado = false;
 let diaVisto = null; // dia escolhido na aba Hoje (null = hoje)
@@ -35,19 +36,26 @@ function aplicarTema(tema) {
 function botaoTema() {
   const atual = TEMAS.find(([t]) => t === temaSalvo()) || TEMAS[0];
   const proximo = TEMAS[(TEMAS.indexOf(atual) + 1) % TEMAS.length];
-  return el('button', { type: 'button', class: 'botao-icone', title: `Tema: ${atual[1]}`, 'aria-label': `Tema: ${atual[1]}. Trocar para ${proximo[1]}`,
+  return el('button', { type: 'button', class: 'botao-tema', title: `Tema: ${atual[1]}`, 'aria-label': `Tema: ${atual[1]}. Trocar para ${proximo[1]}`,
     onclick: () => { aplicarTema(proximo[0]); renderizar(); } }, atual[2]);
+}
+
+function irParaDia(dia) {
+  diaVisto = dia === hojeSP() ? null : dia;
+  renderizar();
 }
 
 function navegacaoDia(estado) {
   const n = diasEntre(estado.hoje, estado.dia);
-  const ir = (dia) => { diaVisto = dia === estado.hoje ? null : dia; renderizar(); };
-  return el('div', { class: 'nav-dia' },
-    el('button', { type: 'button', class: 'botao-icone', 'aria-label': 'Dia anterior', disabled: n <= -LIMITE_PASSADO,
-      onclick: () => ir(somarDias(estado.dia, -1)) }, '‹'),
-    el('button', { type: 'button', class: 'botao-icone', 'aria-label': 'Próximo dia', disabled: n >= LIMITE_FUTURO,
-      onclick: () => ir(somarDias(estado.dia, 1)) }, '›'),
-    n === 0 ? null : el('button', { type: 'button', class: 'secundario botao-hoje', onclick: () => ir(estado.hoje) }, 'Hoje'));
+  const antes = somarDias(estado.dia, -1);
+  const depois = somarDias(estado.dia, 1);
+  return [
+    n === 0 ? null : el('button', { type: 'button', class: 'botao-nav', onclick: () => irParaDia(estado.hoje) }, 'HOJE'),
+    el('button', { type: 'button', class: 'botao-nav', 'aria-label': 'Dia anterior', disabled: n <= -LIMITE_PASSADO,
+      onclick: () => irParaDia(antes) }, `‹ ${antes.slice(8)}`),
+    el('button', { type: 'button', class: 'botao-nav', 'aria-label': 'Próximo dia', disabled: n >= LIMITE_FUTURO,
+      onclick: () => irParaDia(depois) }, `${depois.slice(8)} ›`),
+  ];
 }
 
 function abaAtual() {
@@ -66,7 +74,7 @@ function mensagemErro(erro) {
 }
 
 function criarAcoes(online) {
-  const acoes = { online, aviso };
+  const acoes = { online, aviso, irParaDia };
   for (const nome of ['marcarFeito', 'desmarcarFeito', 'atualizarCobertura', 'salvarTarefa', 'apagarTarefa', 'salvarCategoria', 'apagarCategoria']) {
     acoes[nome] = async (...args) => {
       try {
@@ -108,10 +116,11 @@ export async function renderizar() {
 
   app.replaceChildren(
     el('header', { class: 'topo' },
-      el('h1', {}, naAbaHoje ? rotuloDia(estado.dia, estado.hoje) : tituloAba),
-      el('span', { class: 'data' }, `${NOMES_DIA[diaDaSemana(diaTopo)]}, ${formatarDDMM(diaTopo)}`),
-      online ? null : el('span', { class: 'selo selo-offline' }, 'offline'),
-      el('div', { class: 'topo-acoes' }, naAbaHoje ? navegacaoDia(estado) : null, botaoTema())),
+      el('div', { class: 'liga' }, peixe(22), `Piaba · ${DIAS_CURTOS[diaDaSemana(diaTopo)]} ${formatarDDMM(diaTopo)}`,
+        online ? null : el('span', { class: 'selo-offline' }, 'OFFLINE')),
+      el('div', { class: 'linha-titulo' },
+        el('h1', {}, naAbaHoje ? rotuloDia(estado.dia, estado.hoje) : tituloAba),
+        el('div', { class: 'topo-acoes' }, naAbaHoje ? navegacaoDia(estado) : null, botaoTema()))),
     conteudo,
     el('nav', { class: 'abas' }, ABAS.map(([chave, titulo]) =>
       el('a', { href: `#${chave}`, class: chave === chaveAba ? 'ativa' : '', 'aria-current': chave === chaveAba ? 'page' : null }, titulo))),
@@ -155,7 +164,8 @@ function telaLogin() {
     campoCodigo.focus();
   } }, 'Já tenho um código');
 
-  app.replaceChildren(el('main', { class: 'login' }, el('h1', {}, 'Organizador'), passoEmail, jaTenho, passoCodigo, status));
+  app.replaceChildren(el('main', { class: 'login' },
+    el('div', { class: 'liga' }, peixe(26), 'Piaba'), el('h1', {}, 'Organizador'), passoEmail, jaTenho, passoCodigo, status));
 }
 
 async function iniciar() {

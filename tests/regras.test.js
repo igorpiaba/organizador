@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hojeSP, somarDias, diasEntre, formatarDDMM, diaDaSemana, rotinaVenceEm, statusCobertura, montarDia, rotuloDia, limitarDia, LIMITE_PASSADO, LIMITE_FUTURO, montarFeitas, DIAS_HISTORICO } from '../web/regras.js';
+import { hojeSP, somarDias, diasEntre, formatarDDMM, diaDaSemana, rotinaVenceEm, statusCobertura, montarDia, rotuloDia, limitarDia, LIMITE_PASSADO, LIMITE_FUTURO, montarFeitas, DIAS_HISTORICO, placarDia, diasComFimDeCobertura } from '../web/regras.js';
 import { HOJE, tarefasExemplo } from './exemplo.js';
 
 test('hojeSP usa o fuso de São Paulo', () => {
@@ -136,31 +136,35 @@ test('montarDia num dia futuro projeta as coberturas', () => {
   assert.ok(ids(dia.atrasadas).includes('pal'));             // agendado acabou 22/10
 });
 
-test('montarFeitas agrupa por dia, do mais recente ao mais antigo', () => {
-  const conclusoes = [
-    { tarefa_id: 'dash', dia: '2026-10-21' },
-    { tarefa_id: 'dash', dia: '2026-10-20' },
-    { tarefa_id: 'alta', dia: '2026-10-21' },
-  ];
-  const tarefas = tarefasExemplo.map(t => t.id === 'feita' ? { ...t, concluida_em: '2026-10-21T02:30:00Z' } : t); // 23h30 do dia 20 em SP
+test('montarFeitas lista avulsas concluídas e coberturas atualizadas, sem rotinas', () => {
+  const tarefas = tarefasExemplo.map(t => t.id === 'hoje' ? { ...t, concluida_em: '2026-10-21T02:30:00Z' } : t); // 23h30 do dia 20 em SP
   const historico = [{ tarefa_id: 'pal', de: '2026-10-19', para: '2026-10-22', origem: 'automatico', em: '2026-10-20T15:00:00Z' }];
-  const r = montarFeitas(tarefas, conclusoes, historico, HOJE);
+  const r = montarFeitas(tarefas, historico, HOJE);
   assert.deepEqual(r.dias.map(d => d.dia), ['2026-10-21', '2026-10-20']);
-  assert.deepEqual(r.dias[0].itens.map(i => i.tarefa.id), ['alta', 'dash']);
-  assert.deepEqual(r.dias[1].itens.map(i => [i.tipo, i.tarefa.id]), [['cobertura', 'pal'], ['rotina', 'dash'], ['avulsa', 'feita']]);
+  assert.deepEqual(r.dias[0].itens.map(i => [i.tipo, i.tarefa.id]), [['avulsa', 'feita']]);
+  assert.deepEqual(r.dias[1].itens.map(i => [i.tipo, i.tarefa.id]), [['cobertura', 'pal'], ['avulsa', 'hoje']]);
   assert.deepEqual(r.dias[1].itens[0], { tipo: 'cobertura', tarefa: tarefas[1], dia: '2026-10-20', de: '2026-10-19', para: '2026-10-22', origem: 'automatico' });
-  assert.equal(r.ultimos7, 5);
+  assert.equal(r.ultimos7, 3);
 });
 test('montarFeitas ignora o que passou de 30 dias e tarefa apagada', () => {
   assert.equal(DIAS_HISTORICO, 30);
-  const conclusoes = [{ tarefa_id: 'dash', dia: '2026-09-21' }, { tarefa_id: 'dash', dia: '2026-09-22' }, { tarefa_id: 'sumiu', dia: '2026-10-21' }];
-  const semAvulsaFeita = tarefasExemplo.filter(t => t.id !== 'feita');
-  const r = montarFeitas(semAvulsaFeita, conclusoes, [], HOJE);
+  const tarefas = tarefasExemplo.map(t => t.id === 'feita' ? { ...t, concluida_em: '2026-09-21T15:00:00Z' } : t);
+  const historico = [{ tarefa_id: 'sumiu', de: null, para: '2026-10-25', origem: 'app', em: '2026-10-21T12:00:00Z' },
+    { tarefa_id: 'img', de: null, para: '2026-10-25', origem: 'app', em: '2026-09-22T12:00:00Z' }];
+  const r = montarFeitas(tarefas, historico, HOJE);
   assert.deepEqual(r.dias.map(d => d.dia), ['2026-09-22']);
   assert.equal(r.ultimos7, 0);
 });
-test('montarFeitas: rotina adiantada aparece no dia futuro', () => {
-  const semAvulsaFeita = tarefasExemplo.filter(t => t.id !== 'feita');
-  const r = montarFeitas(semAvulsaFeita, [{ tarefa_id: 'dash', dia: '2026-10-22' }], [], HOJE);
-  assert.deepEqual(r.dias.map(d => d.dia), ['2026-10-22']);
+test('placarDia conta atrasadas, vencendo e feitas do dia', () => {
+  const tarefas = tarefasExemplo.map(t => t.id === 'hoje' ? { ...t, concluida_em: '2026-10-21T13:00:00Z' } : t);
+  const dia = montarDia(tarefas, [{ tarefa_id: 'dash', dia: HOJE }], HOJE);
+  // atrasadas: pix + venc; vencendo: pal; rotinas: dash(feita), alta, util; avulsas do dia: semp + 'hoje' concluída hoje + 'feita' concluída hoje
+  assert.deepEqual(placarDia(dia, tarefas), { atrasadas: 2, vencendo: 1, feitas: 3, total: 6 });
+});
+test('placarDia de um dia sem nada', () => {
+  assert.deepEqual(placarDia(montarDia([], [], HOJE), []), { atrasadas: 0, vencendo: 0, feitas: 0, total: 0 });
+});
+test('diasComFimDeCobertura marca os dias em que alguma cobertura ativa acaba', () => {
+  const pausada = { ...tarefasExemplo[0], id: 'x', coberto_ate: '2026-10-25', ativa: false };
+  assert.deepEqual([...diasComFimDeCobertura([...tarefasExemplo, pausada])].sort(), ['2026-10-19', '2026-10-22', '2026-10-30']);
 });

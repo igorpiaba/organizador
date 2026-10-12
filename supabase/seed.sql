@@ -4,7 +4,7 @@
 with u as (select id from auth.users order by created_at limit 1)
 insert into categorias (user_id, nome, cor)
 select u.id, c.nome, c.cor from u, (values
-  ('Palpite', '#16a34a'), ('PIXGOL', '#7c3aed'), ('Pessoal', '#0ea5e9'), ('BPX', '#f97316')
+  ('Palpite', '#ec4899'), ('PIXGOL', '#f07a3a'), ('Pessoal', '#0ea5e9'), ('BPX', '#eab308')
 ) as c(nome, cor)
 where not exists (select 1 from categorias x where x.user_id = u.id and x.nome = c.nome);
 

@@ -1,46 +1,43 @@
-// Aba "Feitas": o que foi concluído nos últimos 30 dias.
+// Aba "Feitas": avulsas concluídas e coberturas atualizadas nos últimos 30 dias (rotinas ficam de fora).
 import { el } from '../dom.js';
 import { montarFeitas, rotuloDia, formatarDDMM, diaDaSemana, diasEntre } from '../regras.js';
-import { bolinha } from './comum.js';
+import { etiqueta } from './comum.js';
 
-const NOMES_DIA = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
 function tituloDia(dia, hoje) {
   const n = diasEntre(hoje, dia);
-  if (n >= -1 && n <= 1) return `${rotuloDia(dia, hoje)}, ${formatarDDMM(dia)}`;
-  return `${NOMES_DIA[diaDaSemana(dia)]}, ${formatarDDMM(dia)}`;
+  return n >= -1 && n <= 1 ? `${rotuloDia(dia, hoje)} · ${formatarDDMM(dia)}` : `${DIAS[diaDaSemana(dia)]} · ${formatarDDMM(dia)}`;
 }
 
 function linha(item, estado, acoes) {
   const { tarefa } = item;
   if (item.tipo === 'cobertura') {
-    const texto = `${tarefa.nome}: ${item.de ? `de ${formatarDDMM(item.de)} ` : ''}para ${formatarDDMM(item.para)}`;
-    return el('li', { class: 'item' },
-      el('span', { class: 'icone-feita', 'aria-hidden': 'true' }, '📅'),
-      el('div', { class: 'item-corpo' }, el('div', { class: 'item-linha' }, bolinha(tarefa, estado),
-        el('span', { class: 'item-texto' }, texto),
-        item.origem === 'automatico' ? el('span', { class: 'selo selo-pausada' }, 'automático') : null)));
+    return el('li', { class: 'linha' },
+      el('span', { class: 'marca-cobertura', 'aria-hidden': 'true' }, '→'),
+      el('div', { class: 'linha-corpo' }, el('div', { class: 'nome' }, tarefa.nome),
+        el('div', { class: 'sub' }, `${item.de ? `de ${formatarDDMM(item.de)} ` : ''}para ${formatarDDMM(item.para)}`)),
+      el('div', { class: 'linha-dir' }, etiqueta(tarefa, estado), item.origem === 'automatico' ? el('span', { class: 'selo-auto' }, 'AUTO') : null));
   }
-  const desfazer = () => acoes.desmarcarFeito(tarefa, item.dia);
-  return el('li', { class: 'item' },
-    el('span', { class: 'icone-feita', 'aria-hidden': 'true' }, '✅'),
-    el('div', { class: 'item-corpo' }, el('div', { class: 'item-linha' }, bolinha(tarefa, estado),
-      el('span', { class: 'item-texto' }, tarefa.nome))),
-    el('button', { type: 'button', class: 'secundario botao-pequeno', disabled: !acoes.online,
-      'aria-label': `Desfazer ${tarefa.nome} (${formatarDDMM(item.dia)})`, onclick: desfazer }, 'Desfazer'));
+  return el('li', { class: 'linha' },
+    el('span', { class: 'marca-feita', 'aria-hidden': 'true' }, '✓'),
+    el('div', { class: 'linha-corpo' }, el('div', { class: 'nome' }, tarefa.nome)),
+    el('div', { class: 'linha-dir' }, etiqueta(tarefa, estado),
+      el('button', { type: 'button', class: 'secundario botao-pequeno', disabled: !acoes.online,
+        'aria-label': `Desfazer ${tarefa.nome} (${formatarDDMM(item.dia)})`, onclick: () => acoes.desmarcarFeito(tarefa, item.dia) }, 'Desfazer')));
 }
 
 export function desenhar(raiz, estado, acoes) {
-  const { dias, ultimos7 } = montarFeitas(estado.tarefas, estado.conclusoes, estado.historico || [], estado.hoje);
-  raiz.append(el('p', { class: 'resumo-feitas' },
-    el('strong', {}, String(ultimos7)), ultimos7 === 1 ? ' tarefa feita nos últimos 7 dias' : ' tarefas feitas nos últimos 7 dias'));
+  const { dias, ultimos7 } = montarFeitas(estado.tarefas, estado.historico || [], estado.hoje);
+  raiz.append(el('div', { class: 'placar placar-unico' },
+    el('div', { class: `g${ultimos7 === 0 ? ' zero' : ''}` }, el('b', {}, String(ultimos7)), el('span', {}, 'Feitas nos últimos 7 dias'))));
   if (dias.length === 0) {
     raiz.append(el('p', { class: 'vazio' }, 'Nada concluído nos últimos 30 dias.'));
     return;
   }
   for (const { dia, itens } of dias) {
-    raiz.append(el('section', { class: 'grupo' },
-      el('h2', {}, tituloDia(dia, estado.hoje), el('span', { class: 'contagem' }, String(itens.length))),
+    raiz.append(el('section', {},
+      el('h2', { class: 'grupo-titulo' }, el('span', {}, tituloDia(dia, estado.hoje), el('span', { class: 'n' }, String(itens.length))), el('span', {})),
       el('ul', { class: 'lista' }, itens.map(item => linha(item, estado, acoes)))));
   }
 }

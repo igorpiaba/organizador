@@ -1,7 +1,7 @@
 // Aba "Tarefas": listar, criar, editar, pausar e apagar; categorias no fim.
 import { el } from '../dom.js';
 import { formatarDDMM } from '../regras.js';
-import { bolinha, seloPrioridade } from './comum.js';
+import { etiqueta } from './comum.js';
 
 const TIPOS = { cobertura: 'Cobertura', rotina: 'Rotina', avulsa: 'Avulsa' };
 const DIAS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -134,14 +134,14 @@ function categorias(estado, acoes) {
     const nome = el('input', { type: 'text', value: c.nome || '', placeholder: 'Nova categoria', 'aria-label': 'Nome da categoria' });
     const cor = el('input', { type: 'color', value: c.cor || '#0ea5e9', 'aria-label': 'Cor' });
     const salvar = () => nome.value.trim() && acoes.salvarCategoria({ id: c.id, nome: nome.value.trim(), cor: cor.value });
-    return el('li', { class: 'item categoria' }, cor, nome,
+    return el('li', { class: 'categoria' }, cor, nome,
       c.id
         ? el('button', { type: 'button', class: 'perigo', disabled: !acoes.online,
             onclick: () => confirm(`Apagar a categoria “${c.nome}”?`) && acoes.apagarCategoria(c.id) }, 'Apagar')
         : el('button', { type: 'button', disabled: !acoes.online, onclick: salvar }, 'Adicionar'),
       c.id ? (cor.addEventListener('change', salvar), nome.addEventListener('change', salvar), null) : null);
   };
-  return [el('h2', { class: 'secao-titulo' }, 'Categorias'),
+  return [el('h2', { class: 'grupo-titulo' }, el('span', {}, 'Categorias'), el('span', {}, 'cor')),
     el('ul', { class: 'lista' }, estado.categorias.map(linha), linha({}))];
 }
 
@@ -151,30 +151,29 @@ export function desenhar(raiz, estado, acoes) {
     raiz.append(formulario(estado, acoes, redesenhar));
     return;
   }
-  const filtros = el('div', { class: 'filtros' },
-    el('select', { 'aria-label': 'Filtrar por categoria', onchange: (e) => { filtro.categoria = e.target.value; redesenhar(); } },
-      el('option', { value: '' }, 'Todas as categorias'),
-      estado.categorias.map(c => el('option', { value: c.id, selected: filtro.categoria === c.id }, c.nome))),
-    el('select', { 'aria-label': 'Filtrar por tipo', onchange: (e) => { filtro.tipo = e.target.value; redesenhar(); } },
-      el('option', { value: '' }, 'Todos os tipos'),
-      Object.entries(TIPOS).map(([v, n]) => el('option', { value: v, selected: filtro.tipo === v }, n))));
-
   const lista = estado.tarefas
     .filter(t => (!filtro.categoria || t.categoria_id === filtro.categoria) && (!filtro.tipo || t.tipo === filtro.tipo));
+  const abrir = (t) => { if (acoes.online) { editando = t; redesenhar(); } };
 
   raiz.append(
-    el('div', { class: 'botoes' }, el('button', { type: 'button', disabled: !acoes.online,
-      onclick: () => { editando = {}; redesenhar(); } }, '+ Nova tarefa')),
-    el('div', { style: { height: '12px' } }),
-    filtros,
+    el('div', { class: 'barra-acoes' },
+      el('select', { 'aria-label': 'Filtrar por categoria', onchange: (e) => { filtro.categoria = e.target.value; redesenhar(); } },
+        el('option', { value: '' }, 'Todas as categorias'),
+        estado.categorias.map(c => el('option', { value: c.id, selected: filtro.categoria === c.id }, c.nome))),
+      el('select', { 'aria-label': 'Filtrar por tipo', onchange: (e) => { filtro.tipo = e.target.value; redesenhar(); } },
+        el('option', { value: '' }, 'Todos os tipos'),
+        Object.entries(TIPOS).map(([v, n]) => el('option', { value: v, selected: filtro.tipo === v }, n))),
+      el('button', { type: 'button', disabled: !acoes.online, onclick: () => abrir({}) }, '+ Nova')),
+    el('h2', { class: 'grupo-titulo' }, el('span', {}, 'Tarefas', el('span', { class: 'n' }, String(lista.length))), el('span', {}, 'tipo')),
     lista.length === 0 ? el('p', { class: 'vazio' }, 'Nenhuma tarefa com esse filtro.') :
       el('ul', { class: 'lista' }, lista.map(t => el('li', {
-        class: `item item-tarefa${t.ativa ? '' : ' pausada'}`, tabindex: 0,
-        onclick: () => { if (acoes.online) { editando = t; redesenhar(); } },
-        onkeydown: (e) => { if (e.key === 'Enter' && acoes.online) { editando = t; redesenhar(); } },
-      }, el('div', { class: 'item-corpo' },
-        el('div', { class: 'item-linha' }, bolinha(t, estado), el('span', { class: 'item-texto' }, t.nome), seloPrioridade(t),
-          t.ativa ? null : el('span', { class: 'selo selo-pausada' }, 'pausada')),
-        el('div', { class: 'item-obs' }, `${TIPOS[t.tipo]} · ${resumo(t)}`))))),
+        class: `linha linha-tarefa${t.ativa ? '' : ' pausada'}${t.prioridade === 'alta' ? ' alta' : ''}`, tabindex: 0,
+        onclick: () => abrir(t),
+        onkeydown: (e) => { if (e.key === 'Enter') abrir(t); },
+      },
+      el('div', { class: 'linha-corpo' },
+        el('div', { class: 'nome' }, t.nome),
+        el('div', { class: 'sub' }, [resumo(t), t.ativa ? null : 'pausada'].filter(Boolean).join(' · '))),
+      el('div', { class: 'linha-dir' }, etiqueta(t, estado), el('span', { class: 'resumo-tipo' }, TIPOS[t.tipo].toUpperCase()))))),
     ...categorias(estado, acoes));
 }

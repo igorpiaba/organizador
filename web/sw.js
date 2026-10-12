@@ -1,5 +1,5 @@
 // Guarda a casca do app para abrir sem internet. Os dados vêm do Supabase (nunca interceptado).
-const CACHE = 'organizador-v6';
+const CACHE = 'organizador-v7';
 const CASCA = ['./', 'index.html', 'estilo.css', 'app.js', 'config.js', 'dom.js', 'dados.js', 'regras.js',
   'telas/comum.js', 'telas/hoje.js', 'telas/coberturas.js', 'telas/tarefas.js', 'telas/feitas.js',
   'manifest.webmanifest', 'icone-192.png', 'icone-512.png'];
@@ -16,7 +16,7 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  const nossa = url.origin === self.location.origin || url.hostname === 'cdn.jsdelivr.net';
+  const nossa = url.origin === self.location.origin || ['cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname);
   if (e.request.method !== 'GET' || !nossa) return;
   e.respondWith(
     fetch(e.request)

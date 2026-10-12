@@ -159,17 +159,14 @@ export function limitarDia(dia, hoje) {
 
 // Aba "Feitas": o que foi concluído nos últimos dias, agrupado por dia.
 export const DIAS_HISTORICO = 30;
-const ORDEM_TIPO = { cobertura: 0, rotina: 1, avulsa: 2 };
+const ORDEM_TIPO = { cobertura: 0, avulsa: 1 };
 
-export function montarFeitas(tarefas, conclusoes, historico, hoje) {
+// Rotinas ficam de fora para não encher a lista (são todo dia).
+export function montarFeitas(tarefas, historico, hoje) {
   const porId = new Map(tarefas.map(t => [t.id, t]));
   const inicio = somarDias(hoje, -(DIAS_HISTORICO - 1));
   const itens = [];
 
-  for (const c of conclusoes) {
-    const tarefa = porId.get(c.tarefa_id);
-    if (tarefa) itens.push({ tipo: 'rotina', tarefa, dia: c.dia });
-  }
   for (const tarefa of tarefas) {
     if (tarefa.tipo === 'avulsa' && tarefa.concluida_em) {
       itens.push({ tipo: 'avulsa', tarefa, dia: hojeSP(new Date(tarefa.concluida_em)) });
@@ -195,4 +192,22 @@ export function montarFeitas(tarefas, conclusoes, historico, hoje) {
   const desde7 = somarDias(hoje, -6);
   const ultimos7 = itens.filter(i => i.dia >= desde7 && i.dia <= hoje).length;
   return { dias, ultimos7 };
+}
+
+// Placar do topo da aba "Hoje".
+export function placarDia(dia, tarefas) {
+  const concluidasNoDia = tarefas.filter(t => t.tipo === 'avulsa' && t.ativa && t.concluida_em
+    && hojeSP(new Date(t.concluida_em)) === dia.hoje).length;
+  const rotinasFeitas = dia.rotinas.filter(r => r.feita).length;
+  return {
+    atrasadas: dia.atrasadas.length,
+    vencendo: dia.coberturas.length,
+    feitas: rotinasFeitas + concluidasNoDia,
+    total: dia.rotinas.length + dia.avulsas.length + concluidasNoDia,
+  };
+}
+
+// Dias em que alguma cobertura ativa acaba (traço amarelo na faixa de dias).
+export function diasComFimDeCobertura(tarefas) {
+  return new Set(tarefas.filter(t => t.tipo === 'cobertura' && t.ativa && t.coberto_ate).map(t => t.coberto_ate));
 }

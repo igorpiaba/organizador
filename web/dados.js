@@ -1,7 +1,7 @@
 // Todas as chamadas do app ao Supabase.
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
-import { hojeSP, somarDias, LIMITE_FUTURO, DIAS_HISTORICO } from './regras.js';
+import { hojeSP, somarDias, LIMITE_PASSADO, LIMITE_FUTURO, DIAS_HISTORICO } from './regras.js';
 
 export const configurado = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 export const supabase = configurado ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
@@ -20,7 +20,7 @@ export async function carregar() {
   const [tarefas, categorias, conclusoes] = (await Promise.all([
     supabase.from('tarefas').select('*').order('nome'),
     supabase.from('categorias').select('*').order('nome'),
-    supabase.from('conclusoes').select('tarefa_id,dia').gte('dia', somarDias(hoje, -(DIAS_HISTORICO - 1))).lte('dia', somarDias(hoje, LIMITE_FUTURO)),
+    supabase.from('conclusoes').select('tarefa_id,dia').gte('dia', somarDias(hoje, -LIMITE_PASSADO)).lte('dia', somarDias(hoje, LIMITE_FUTURO)),
   ])).map(checar);
   const estado = { tarefas, categorias, conclusoes };
   try { localStorage.setItem(CHAVE_LOCAL, JSON.stringify(estado)); } catch { /* sem armazenamento: segue sem cópia */ }
