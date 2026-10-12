@@ -71,7 +71,7 @@ test('usa o dia de São Paulo nas conclusões', async () => {
   assert.ok(f.chamadas.some(c => c.url.includes('/rest/v1/conclusoes') && c.url.includes('dia=eq.2026-10-21')));
 });
 
-const comLembrete = tarefasExemplo.map(t => t.id === 'hoje' ? { ...t, lembrete: '15:00' } : t);
+const comLembrete = tarefasExemplo.map(t => t.id === 'hoje' ? { ...t, lembrete: '15:00', prioridade: 'alta' } : t);
 const QUARTA_15H10 = new Date('2026-10-21T18:10:00Z');
 
 test('rodada de lembretes envia o que venceu e registra', async () => {

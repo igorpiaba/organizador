@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { horaSP, lembretesDevidos, chaveLembrete, montarMensagemLembretes } from '../avisos/lembretes.js';
 import { HOJE, tarefasExemplo } from './exemplo.js';
 
-const avulsa = (id, extra) => ({ ...tarefasExemplo[7], id, nome: `Tarefa ${id}`, prazo: HOJE, ...extra });
+const avulsa = (id, extra) => ({ ...tarefasExemplo[7], id, nome: `Tarefa ${id}`, prazo: HOJE, prioridade: 'alta', ...extra });
 
 test('horaSP usa o fuso de São Paulo', () => {
   assert.equal(horaSP(new Date('2026-10-21T18:05:00Z')), '15:05');
@@ -38,4 +38,9 @@ test('mensagem de lembretes', () => {
     '⏰ Lembrete\n• Mercados EPO (15:00)\n  ver com a Digitain');
   assert.equal(montarMensagemLembretes([avulsa('a', { lembrete: '15:00' }), avulsa('b', { lembrete: '15:30' })]),
     '⏰ Lembretes (2)\n• Tarefa a (15:00)\n• Tarefa b (15:30)');
+});
+
+test('lembrete só para prioridade alta', () => {
+  const tarefas = [avulsa('alta', { lembrete: '15:00' }), avulsa('media', { lembrete: '15:00', prioridade: 'media' }), avulsa('baixa', { lembrete: '15:00', prioridade: 'baixa' })];
+  assert.deepEqual(lembretesDevidos(tarefas, new Set(), HOJE, '16:00').map(t => t.id), ['alta']);
 });

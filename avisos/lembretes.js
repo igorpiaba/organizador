@@ -1,4 +1,4 @@
-// Lembretes ao longo do dia: avulsas com horário de lembrete, avisadas uma vez por dia.
+// Lembretes ao longo do dia: avulsas de prioridade alta com horário de lembrete, avisadas uma vez por dia.
 const FUSO = 'America/Sao_Paulo';
 const INICIO = '08:00'; // lembretes até 08:00 já saem no resumo da manhã
 
@@ -12,7 +12,7 @@ export function chaveLembrete(tarefaId, dia) {
 
 export function lembretesDevidos(tarefas, enviados, hoje, hora) {
   return tarefas
-    .filter(t => t.tipo === 'avulsa' && t.ativa && !t.concluida_em && t.lembrete)
+    .filter(t => t.tipo === 'avulsa' && t.ativa && !t.concluida_em && t.lembrete && t.prioridade === 'alta')
     .filter(t => !t.prazo || t.prazo <= hoje)
     .filter(t => t.lembrete > INICIO && t.lembrete <= hora)
     .filter(t => !enviados.has(chaveLembrete(t.id, hoje)))
