@@ -7,7 +7,7 @@ import { tarefasExemplo } from './exemplo.js';
 const env = { SUPABASE_URL: 'https://x.supabase.co', SUPABASE_SERVICE_KEY: 'chave', TELEGRAM_BOT_TOKEN: 'tok', TELEGRAM_CHAT_ID: '-100' };
 const QUARTA_9H = new Date('2026-10-21T12:00:00Z');
 
-function fetchFalso({ tarefas = tarefasExemplo, conclusoes = [], telegramStatus = 200 } = {}) {
+function fetchFalso({ tarefas = tarefasExemplo, conclusoes = [], telegramStatus = 200, heartbeat = [] } = {}) {
   const chamadas = [];
   const fn = async (url, opcoes = {}) => {
     chamadas.push({ url, opcoes });
@@ -15,7 +15,7 @@ function fetchFalso({ tarefas = tarefasExemplo, conclusoes = [], telegramStatus 
     if (url.includes('api.telegram.org')) return json({ ok: telegramStatus === 200 }, telegramStatus);
     if (url.includes('/rest/v1/tarefas')) return json(tarefas);
     if (url.includes('/rest/v1/conclusoes')) return json(conclusoes);
-    if (url.includes('/rest/v1/heartbeat')) return json(null, 201);
+    if (url.includes('/rest/v1/heartbeat')) return (opcoes.method || 'GET') === 'GET' ? json(heartbeat) : json(null, 201);
     throw new Error('url inesperada ' + url);
   };
   return { fn, chamadas, telegram: () => chamadas.filter(c => c.url.includes('api.telegram.org')) };
@@ -69,4 +69,25 @@ test('usa o dia de São Paulo nas conclusões', async () => {
   const f = fetchFalso();
   await principal({ rodada: 'manha', env, fetch: f.fn, agora: new Date('2026-10-22T02:30:00Z'), esperaMs: 0 });
   assert.ok(f.chamadas.some(c => c.url.includes('/rest/v1/conclusoes') && c.url.includes('dia=eq.2026-10-21')));
+});
+
+const comLembrete = tarefasExemplo.map(t => t.id === 'hoje' ? { ...t, lembrete: '15:00' } : t);
+const QUARTA_15H10 = new Date('2026-10-21T18:10:00Z');
+
+test('rodada de lembretes envia o que venceu e registra', async () => {
+  const f = fetchFalso({ tarefas: comLembrete });
+  const r = await principal({ rodada: 'lembretes', env, fetch: f.fn, agora: QUARTA_15H10, esperaMs: 0 });
+  assert.deepEqual(r, { enviada: true });
+  assert.equal(JSON.parse(f.telegram()[0].opcoes.body).text, '⏰ Lembrete\n• Responder jurídico (15:00)');
+  const registros = f.chamadas.filter(c => c.url.includes('/rest/v1/heartbeat') && c.opcoes.method === 'POST').map(c => JSON.parse(c.opcoes.body));
+  assert.deepEqual(registros, [{ rodada: 'lembrete hoje 2026-10-21' }]);
+});
+
+test('rodada de lembretes não repete o que já foi avisado', async () => {
+  const f = fetchFalso({ tarefas: comLembrete, heartbeat: [{ rodada: 'lembrete hoje 2026-10-21' }] });
+  const r = await principal({ rodada: 'lembretes', env, fetch: f.fn, agora: QUARTA_15H10, esperaMs: 0 });
+  assert.deepEqual(r, { enviada: false });
+  assert.equal(f.telegram().length, 0);
+  assert.equal(f.chamadas.filter(c => c.opcoes.method === 'POST').length, 0);
+  assert.ok(f.chamadas.some(c => c.url.includes('heartbeat?select=rodada&rodada=like.lembrete*2026-10-21')));
 });

@@ -4,13 +4,14 @@ on:
   schedule:
     - cron: '0 11 * * *'   # 8h em Brasília
     - cron: '0 20 * * *'   # 17h em Brasília
+    - cron: '*/30 11-23,0-1 * * *'   # lembretes: 8h às 22h30 em Brasília
     - cron: '0 12 1 * *'   # batimento mensal
   workflow_dispatch:
     inputs:
       rodada:
         description: Rodada
         type: choice
-        options: [teste, manha, tarde]
+        options: [teste, manha, tarde, lembretes]
         default: teste
 
 jobs:
@@ -33,6 +34,7 @@ jobs:
         run: |
           if [ -n "$RODADA_MANUAL" ]; then RODADA="$RODADA_MANUAL"
           elif [ "$CRON" = "0 11 * * *" ]; then RODADA=manha
+          elif [ "$CRON" = "*/30 11-23,0-1 * * *" ]; then RODADA=lembretes
           else RODADA=tarde; fi
           node avisos/enviar.js --rodada "$RODADA"
 
