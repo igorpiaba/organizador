@@ -74,7 +74,7 @@ Todas as datas são calculadas no fuso `America/Sao_Paulo`.
 - Nenhuma chave aparece em código, log ou chat.
 
 ### Avisos (Telegram)
-- Bot: @DronhaBot (já existe). Destino: **chat novo e exclusivo do organizador**, separado do canal do monitor-bets.
+- Bot: **@AgendadoPeixe_bot**, exclusivo do organizador (o @DronhaBot tem um processo do monitor-bets lendo as mensagens dele). Destino: grupo **Avisos Piaba**.
 - **8h (BRT):** resumo do dia com as contagens e a lista de atrasadas, coberturas acabando e o que alcançou o limite, além das rotinas e avulsas de hoje.
 - **17h (BRT):** só o que continua pendente hoje. Se não houver nada pendente, não manda mensagem.
 - Cron em UTC: `0 11 * * *` e `0 20 * * *` (o Brasil não tem horário de verão). O GitHub pode atrasar a execução em até cerca de 30 minutos, o que é aceitável.

@@ -65,7 +65,7 @@
 
 - O repositório `igorpiaba/organizador` é criado no GitHub e o app é publicado em `https://igorpiaba.github.io/organizador/`.
 - As chaves vão do Keychain direto para os segredos do GitHub, sem aparecer na tela.
-- Mande uma mensagem qualquer (ex.: "oi") no chat novo do Telegram onde está o @DronhaBot. É assim que o Claude descobre o código desse chat.
+- Os avisos usam um bot próprio, o **@AgendadoPeixe_bot** (token no Keychain, serviço `organizador-telegram`), no grupo **Avisos Piaba**. O @DronhaBot ficou só para o monitor-bets, porque o bot do monitor consome as mensagens dele.
 - Chega uma mensagem de teste nesse chat, e você confirma que recebeu.
 
 ## Parte 3 — Instalar no iPhone
