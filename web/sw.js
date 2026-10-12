@@ -1,8 +1,8 @@
 // Guarda a casca do app para abrir sem internet. Os dados vêm do Supabase (nunca interceptado).
-const CACHE = 'organizador-v7';
+const CACHE = 'organizador-v8';
 const CASCA = ['./', 'index.html', 'estilo.css', 'app.js', 'config.js', 'dom.js', 'dados.js', 'regras.js',
   'telas/comum.js', 'telas/hoje.js', 'telas/coberturas.js', 'telas/tarefas.js', 'telas/feitas.js',
-  'manifest.webmanifest', 'icone-192.png', 'icone-512.png'];
+  'manifest.webmanifest', 'icone-192.png', 'icone-512.png', 'erros.js'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(CASCA)).then(() => self.skipWaiting()));

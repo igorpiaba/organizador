@@ -7,6 +7,7 @@ import * as coberturas from './telas/coberturas.js';
 import * as tarefas from './telas/tarefas.js';
 import * as feitas from './telas/feitas.js';
 import { peixe } from './telas/comum.js';
+import { ehErroDeLogin } from './erros.js';
 
 const ABAS = [
   ['hoje', 'Hoje', hoje],
@@ -94,7 +95,17 @@ export async function renderizar() {
   let estado;
   let online = navigator.onLine;
   if (online) {
-    try { estado = await dados.carregar(); } catch { online = false; }
+    try {
+      estado = await dados.carregar();
+    } catch (erro) {
+      if (ehErroDeLogin(erro)) {
+        logado = false;
+        await dados.supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        telaLogin('Sua sessão expirou. Entre de novo.');
+        return;
+      }
+      online = false;
+    }
   }
   if (!online) estado = dados.estadoSalvo();
   if (!estado) {
@@ -127,9 +138,9 @@ export async function renderizar() {
   );
 }
 
-function telaLogin() {
+function telaLogin(mensagem = '') {
   let email = '';
-  const status = el('p', { class: 'login-status' });
+  const status = el('p', { class: 'login-status' }, mensagem);
   const campoCodigo = el('input', { type: 'text', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: 20, placeholder: '12345678', autocapitalize: 'off' });
   const passoCodigo = el('form', { class: 'login-codigo', hidden: true, onsubmit: async (e) => {
     e.preventDefault();

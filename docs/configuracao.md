@@ -15,7 +15,7 @@
 
 3. **Criar o seu usuário**
    - Abra **Authentication**, depois **Users**, depois **Add user** e **Send invitation**.
-   - Digite `o e-mail do Igor` e envie.
+   - Digite o seu e-mail e envie.
    - Abra o e-mail que chegar e clique em **Accept the invite**. Pode fechar a página que abrir.
 
 4. **Fechar o cadastro para mais ninguém entrar**

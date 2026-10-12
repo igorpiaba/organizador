@@ -355,7 +355,7 @@ heartbeat(id bigint generated always as identity primary key, rodada text, em ti
 - [ ] **Step 2:** Escrever `docs/configuracao.md`, parte "Banco", clique a clique para o Igor:
   1. Supabase → New project (região São Paulo), anotar a senha num gerenciador.
   2. SQL Editor → colar `schema.sql` → Run.
-  3. Authentication → Users → "Add user" → "Send invitation" para `o e-mail do Igor`, e aceitar o convite pelo e-mail.
+  3. Authentication → Users → "Add user" → "Send invitation" para o e-mail do Igor, e aceitar o convite pelo e-mail.
   4. Authentication → Sign In / Providers → desligar "Allow new users to sign up".
   5. Authentication → URL Configuration: Site URL `https://igorpiaba.github.io/organizador/`; Redirect URLs com esse endereço e `http://localhost:8000/`.
   6. SQL Editor → colar `seed.sql` → Run.

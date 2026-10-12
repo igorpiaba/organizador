@@ -67,7 +67,8 @@ function formulario(estado, acoes, redesenhar) {
     rotina: el('div', { class: 'formulario-bloco' },
       el('fieldset', {}, el('legend', {}, 'Repetição'), radios, blocoDias, blocoDiaMes),
       campo('Horário sugerido', ent.horario_sugerido)),
-    avulsa: el('div', { class: 'formulario-bloco' }, campo('Prazo', ent.prazo), campo('Lembrete', ent.lembrete)),
+    avulsa: el('div', { class: 'formulario-bloco' }, campo('Prazo', ent.prazo), campo('Lembrete', ent.lembrete),
+      el('p', { class: 'sub' }, 'O lembrete chega no Telegram entre 08h30 e 23h30 (até uns 30 min depois do horário). Até 08:00, vai no resumo da manhã.')),
   };
   const mostrarBloco = () => Object.entries(blocos).forEach(([tipo, b]) => { b.hidden = tipo !== ent.tipo.value; });
   ent.tipo.addEventListener('change', mostrarBloco);
